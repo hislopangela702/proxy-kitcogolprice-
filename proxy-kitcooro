@@ -1,0 +1,35 @@
+// proxy-kitco.js
+const express = require("express");
+const fetch = require("node-fetch");
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Ruta de prueba
+app.get("/", (req, res) => {
+  res.send("Proxy Kitco activo ✅");
+});
+
+// Ruta para obtener el precio del oro desde Kitco
+app.get("/onza", async (req, res) => {
+  try {
+    // URL del precio de oro de Kitco (fuente visible en HTML público)
+    const response = await fetch("https://www.kitco.com/gold-price-today-usa/");
+    const html = await response.text();
+
+    // Extrae el precio del oro en USD usando expresión regular
+    const match = html.match(/\$([0-9,]+\.\d{2})/);
+    if (match && match[1]) {
+      const precio = parseFloat(match[1].replace(/,/g, ""));
+      res.json({ xauPrice: precio });
+    } else {
+      res.status(500).json({ error: "No se encontró el precio del oro en Kitco" });
+    }
+  } catch (error) {
+    console.error("Error al traer datos de Kitco:", error);
+    res.status(500).json({ error: "No se pudo obtener la Onza Troy desde Kitco" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor proxy de Kitco corriendo en puerto ${PORT}`);
+});
